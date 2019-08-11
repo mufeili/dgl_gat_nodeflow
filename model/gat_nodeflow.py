@@ -145,7 +145,6 @@ class GATNodeFlow(nn.Module):
                  num_hidden,
                  num_classes,
                  num_heads,
-                 attention_types,
                  feat_drop,
                  attn_drop,
                  residual,
@@ -159,7 +158,7 @@ class GATNodeFlow(nn.Module):
 
         # input projection (no residual)
         self.gat_layers.append(GraphAttentionNodeFlow(
-            0, in_dim, num_hidden[0], num_heads[0], attention_types[0],
+            0, in_dim, num_hidden[0], num_heads[0],
             feat_drop, attn_drop, residual=False,
             activation=self.activation, aggregate='concat'))
         # hidden layers
@@ -167,12 +166,12 @@ class GATNodeFlow(nn.Module):
             # due to multi-head, the in_dim = num_hidden * num_heads
             self.gat_layers.append(GraphAttentionNodeFlow(
                 l, num_hidden[l-1] * num_heads[l-1], num_hidden[l], num_heads[l],
-                attention_types[l], feat_drop, attn_drop, residual=residual,
+                feat_drop, attn_drop, residual=residual,
                 activation=self.activation, aggregate='concat'))
         # output projection
         self.gat_layers.append(GraphAttentionNodeFlow(
             num_layers, num_hidden[-1] * num_heads[-2], num_classes, num_heads[-1],
-            attention_types[-1], feat_drop, attn_drop, residual=residual,
+            feat_drop, attn_drop, residual=residual,
             activation=None, aggregate='mean'))
 
     def forward(self, nf, fetch_attention=False):
