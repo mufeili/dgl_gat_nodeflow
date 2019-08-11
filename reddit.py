@@ -42,11 +42,6 @@ def setup_reddit(args):
 
     return new_args
 
-def set_log_dir(args, run):
-    dir = args['base_dir'] + '/{:d}'.format(run)
-    mkdir_p(dir)
-    return dir
-
 def eval(device, model, nf, labels, loss_func):
     nf.copy_from_parent(ctx=device)
     soft_pred = model(nf)
@@ -254,8 +249,6 @@ if __name__ == '__main__':
     args.update(default_args)
     args = setup_cuda(args)
     args.update(setup_reddit(args))
-    args['base_dir'] = 'results/{}'.format(args['dataset'])
-    mkdir_p(args['base_dir'])
-    args['run'] = 1
-    args['log_dir'] = set_log_dir(args, args['run'])
+    args['log_dir'] = 'results/{}'.format(args['dataset'])
+    mkdir_p(args['log_dir'])
     run_reddit(args)

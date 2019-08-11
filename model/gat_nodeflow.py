@@ -47,7 +47,6 @@ class GraphAttentionNodeFlow(nn.Module):
                  in_dim,
                  out_dim,
                  num_heads,
-                 attention_type,
                  feat_drop,
                  attn_drop,
                  alpha=0.2,
