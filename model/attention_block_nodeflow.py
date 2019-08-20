@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 from math import sqrt
 
-__all__ = ['ConcatAttentionNodeFlow']
+__all__ = ['Attention']
 
 def get_ndata_name(nf, index, name):
     """Return a node data name that does not exist in the given layer of the nodeflow.
@@ -95,11 +95,6 @@ class EdgeSoftmaxNodeFlow(nn.Module):
         nf.block_compute(self.index, fn.copy_edge(self._logits_name, self._logits_name),
                          fn.max(self._logits_name, self._max_logits_name))
         # minus the max and exp
-        """
-        nf.apply_block(self.index, lambda edges: {
-            self._logits_name : torch.exp(edges.data[self._logits_name] - edges.dst[self._max_logits_name])},
-                       edges=nf.block_eid(self.index))
-        """
         nf.apply_block(self.index, lambda edges: {
             self._logits_name : torch.exp(edges.data[self._logits_name] - edges.dst[self._max_logits_name])})
 
@@ -115,7 +110,7 @@ class EdgeSoftmaxNodeFlow(nn.Module):
     def __repr__(self):
         return 'EdgeSoftmax()'
 
-class ConcatAttentionNodeFlow(nn.Module):
+class Attention(nn.Module):
     def __init__(self,
                  index,
                  in_dim,
@@ -125,7 +120,7 @@ class ConcatAttentionNodeFlow(nn.Module):
                  src_atten_attr='a1',
                  dst_atten_attr='a2',
                  atten_attr='a'):
-        super(ConcatAttentionNodeFlow, self).__init__()
+        super(Attention, self).__init__()
         self.index = index
 
         self.src_atten_attr = src_atten_attr
@@ -168,7 +163,7 @@ class ConcatAttentionNodeFlow(nn.Module):
 
         dst_indices_in_nodeflow = nf.layer_nid(self.index+1)
         dst_indices_in_src_layer = nf.map_from_parent_nid(
-            self.index, nf.map_to_parent_nid(dst_indices_in_nodeflow))
+            self.index, nf.map_to_parent_nid(dst_indices_in_nodeflow)) - nf._layer_offsets[self.index]
         a2 = torch.bmm(projected_feats[:, dst_indices_in_src_layer, :], self.attn_r).transpose(0, 1)
 
         nf.layers[self.index].data[self.src_atten_attr] = a1

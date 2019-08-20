@@ -6,7 +6,7 @@ import torch.nn.functional as TorchF
 from math import sqrt
 import dgl.function as fn
 
-from .attention_block_nodeflow import ConcatAttentionNodeFlow
+from .attention_block_nodeflow import Attention
 
 
 class SrcMulEdgeMessageFunction(object):
@@ -69,7 +69,7 @@ class GraphAttentionNodeFlow(nn.Module):
         else:
             self.attn_drop = lambda x : x
 
-        self.attention = ConcatAttentionNodeFlow(self.index, in_dim, out_dim, num_heads, alpha)
+        self.attention = Attention(self.index, in_dim, out_dim, num_heads, alpha)
         self.ret_bias = nn.Parameter(torch.Tensor(size=(num_heads, out_dim)))
         self.residual = residual
         if residual:
@@ -113,14 +113,14 @@ class GraphAttentionNodeFlow(nn.Module):
         ret = ret + self.ret_bias
 
         dst_indices_in_nodeflow = nf.layer_nid(self.index+1)
-        dst_indices_in_src_layer = nf.map_from_parent_nid(
-            self.index, nf.map_to_parent_nid(dst_indices_in_nodeflow))
 
         nf.layers[self.index].data.pop('ft')
         nf.layers[self.index + 1].data.pop('ft')
 
         # 4. residual
         if self.residual:
+            dst_indices_in_src_layer = nf.map_from_parent_nid(
+                self.index, nf.map_to_parent_nid(dst_indices_in_nodeflow)) - nf._layer_offsets[self.index]
             h = h[dst_indices_in_src_layer, :]
             if self.res_fc is not None:
                 resval = self.res_fc(h).reshape((h.shape[0], self.num_heads, -1))  # (V, H, D')
@@ -174,15 +174,9 @@ class GATNodeFlow(nn.Module):
             feat_drop, attn_drop, residual=residual,
             activation=None, aggregate='mean'))
 
-    def forward(self, nf, fetch_attention=False):
+    def forward(self, nf):
         h = nf.layers[0].data['features']
-
-        attention_list = []
         for l in range(self.num_layers + 1):
             h = self.gat_layers[l](nf, h)
-            attention = nf.blocks[l].data.pop('a_drop')
-            if fetch_attention:
-                attention_list.append(attention)
-        if fetch_attention:
-            return h, attention_list
+
         return h
