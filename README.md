@@ -18,4 +18,4 @@ GPU will be used if available.
 The training process can be monitored with tensorboard. To launch the tensorboard, do
 `tensorboard --logdir=.`
 
-![](https://user-images.githubusercontent.com/19576924/63331074-7f854900-c367-11e9-82c5-b82522c6ab7e.png =200x)
+![](https://user-images.githubusercontent.com/19576924/63331074-7f854900-c367-11e9-82c5-b82522c6ab7e.png)
